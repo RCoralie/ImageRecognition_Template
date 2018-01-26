@@ -36,7 +36,7 @@ def process_args(args, defaults):
     # Dataset generation
     parser_dataset = subparsers.add_parser('dataset', help='Create a dataset in the TFRecords format.')
     parser_dataset.set_defaults(phase='dataset')
-    parser_dataset.add_argument('annotations_path', metavar='annotations',
+    parser_dataset.add_argument('annotations_path', metavar='annotations_path',
                               type=str,
                               help=('Path to the annotation file'))
     parser_dataset.add_argument('output_path', nargs='?', metavar='output',
