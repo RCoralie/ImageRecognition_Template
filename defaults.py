@@ -16,3 +16,8 @@ class Config:
     FORMAT = 'PNG'
     IMAGE_HEIGHT = 160
     IMAGE_WIDTH = 60
+
+    # Optimization
+    NUM_EPOCH = 1000
+    BATCH_SIZE = 65
+    INITIAL_LEARNING_RATE = 0.001 #1.0

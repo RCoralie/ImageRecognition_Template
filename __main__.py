@@ -5,6 +5,7 @@ import tensorflow as tf
 
 from .defaults import Config
 from .util import dataset_writer
+from .model.mlp import MultilayerPerceptron
 
 tf.logging.set_verbosity(tf.logging.ERROR)
 
@@ -46,6 +47,26 @@ def process_args(args, defaults):
                               type=int, default=defaults.LOG_STEP,
                               help=('Print log messages every N steps, default = %s' % defaults.LOG_STEP))
 
+    # Train model
+    parser_train = subparsers.add_parser('train', help='Train model.')
+    parser_train.set_defaults(phase='train')
+    parser_train.add_argument('dataset_path', metavar='dataset_path',
+                                type=str,
+                                help=('Path to the dataset (tfrecords) file'))
+    parser_train.add_argument('--num-epoch', dest="num_epoch",
+                              type=int, default=defaults.NUM_EPOCH,
+                              help=('Number of epochs, default = %s' % (defaults.NUM_EPOCH)))
+    parser_train.add_argument('--batch-size', dest="batch_size",
+                              type=int, default=defaults.BATCH_SIZE,
+                              help=('Batch size, default = %s' % (defaults.BATCH_SIZE)))
+    parser.add_argument('--initial-learning-rate', dest="initial_learning_rate",
+                      type=float, default=defaults.INITIAL_LEARNING_RATE,
+                      help=('Initial learning rate, default = %s'
+                            % (defaults.INITIAL_LEARNING_RATE)))
+    parser_train.add_argument('--log-step', dest='log_step',
+                                type=int, default=defaults.LOG_STEP,
+                                help=('Print log messages every N steps, default = %s' % defaults.LOG_STEP))
+
     parameters = parser.parse_args(args)
     return parameters
 
@@ -78,6 +99,10 @@ def main(args=None):
 
         if parameters.phase == 'dataset':
             dataset_writer.generateDataset(parameters.annotations_path, parameters.output_path, parameters.log_step)
+            return
+        elif parameters.phase == 'train':
+            model = MultilayerPerceptron(batch_size = parameters.batch_size, initial_learning_rate=parameters.initial_learning_rate)
+            model.train(parameters.dataset_path, parameters.num_epoch, parameters.log_step)
             return
         else:
             raise NotImplementedError
