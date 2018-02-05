@@ -2,6 +2,7 @@
     A 2-Hidden Layers Fully Connected Neural Network (a.k.a Multilayer Perceptron)
 """
 
+import os
 import time
 import logging
 import tensorflow as tf
@@ -16,15 +17,21 @@ class MultilayerPerceptron(object):
 
     def __init__(self,
                  batch_size,
-                 initial_learning_rate):
+                 initial_learning_rate,
+                 steps_per_checkpoint,
+                 max_checkpoints,
+                 model_dir):
 
-        # Parameters
+        # Parameters --------------------------------------------------------------------------------
         self.learning_rate = initial_learning_rate
         self.batch_size = batch_size
+        self.model_dir = model_dir
+        self.steps_per_checkpoint = steps_per_checkpoint
 
+        # Construct model ---------------------------------------------------------------------------
         # Network Parameters
-        self.n_hidden_1 = 256 # 1st layer number of neurons
-        self.n_hidden_2 = 256 # 2nd layer number of neurons
+        self.n_hidden_1 = 4800 # 1st layer number of neurons
+        self.n_hidden_2 = 2400 # 2nd layer number of neurons
         self.n_input = Config.IMAGE_HEIGHT * Config.IMAGE_WIDTH # size of the data input (total pixels)
         self.n_classes = 36 # total classes (0-9 digits + A-Z chars)
 
@@ -43,8 +50,6 @@ class MultilayerPerceptron(object):
             'b2': tf.Variable(tf.random_normal([self.n_hidden_2])),
             'out': tf.Variable(tf.random_normal([self.n_classes]))
         }
-
-        # Construct model ---------------------------------------------------------------------------
         # Hidden fully connected layer with 256 neurons
         layer_1 = tf.add(tf.matmul(self.X, weights['h1']), biases['b1'])
         # Hidden fully connected layer with 256 neurons
@@ -57,8 +62,13 @@ class MultilayerPerceptron(object):
         self.optimizer = tf.train.AdamOptimizer(learning_rate=self.learning_rate)
         self.train_op = self.optimizer.minimize(self.loss_op)
 
+        # Define initializer and saver --------------------------------------------------------------
+        self.checkpoint_path = os.path.join(self.model_dir, "model.ckpt")
+        self.init = tf.global_variables_initializer()
+        self.saver = tf.train.Saver(max_to_keep=max_checkpoints)
 
-    def train(self, dataset_path, num_epoch, log_step):
+
+    def train(self, dataset_path, num_epoch, load_model, log_step):
 
         logging.info('num_epoch: %d' % num_epoch)
         step_time = 0.0
@@ -68,7 +78,15 @@ class MultilayerPerceptron(object):
         logging.info('Starting the training process.')
         s_gen = DataRead(dataset_path, epochs=num_epoch)
         with tf.Session() as sess:
-            tf.global_variables_initializer().run()
+            # Initialize or load model parameters
+            ckpt = tf.train.get_checkpoint_state(self.model_dir)
+            if ckpt and load_model:
+                logging.info('Reading model parameters from %s' % ckpt.model_checkpoint_path)
+                self.saver.restore(sess, ckpt.model_checkpoint_path)
+            else:
+                logging.info('Initialize model parameters.')
+                sess.run(self.init)
+            # Gradual improvement of model parameters during training steps
             for batch in s_gen.gen(self.batch_size):
                 current_step += 1
                 start_time = time.time()
@@ -79,6 +97,14 @@ class MultilayerPerceptron(object):
                 curr_step_time = (time.time() - start_time)
 
                 # Print statistics for the previous epoch.
-                logging.info("Step %04d : Time: %.3f, loss: %.4f" % (current_step, curr_step_time, loss_value))
+                logging.info('Step %04d - Time: %.3f, loss: %.4f' % (current_step, curr_step_time, loss_value))
 
-        logging.info("Training Finished!")
+                # Save checkpoint
+                if current_step % self.steps_per_checkpoint == 0:
+                    logging.info('Saving model parameters at step %d.' % current_step)
+                    save_path = self.saver.save(sess, self.checkpoint_path, global_step=current_step)
+
+        logging.info('Training Finished!')
+        save_path = self.saver.save(sess, self.checkpoint_path, global_step=current_step)
+        logging.info('Model stored.')
+
