@@ -20,10 +20,10 @@ class Config:
     # Optimization
     NUM_EPOCH = 1000
     BATCH_SIZE = 65
-    INITIAL_LEARNING_RATE = 0.001 #1.0
+    INITIAL_LEARNING_RATE = 0.1 #1.0
 
     # Save config
-    STEPS_PER_CHECKPOINT = 1#100
+    STEPS_PER_CHECKPOINT = 25
     MODEL_DIR = 'checkpoints'
     LOAD_MODEL = True
     MAX_CHECKPOINTS = 4
