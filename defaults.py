@@ -11,11 +11,11 @@ class Config:
     DATASET_PATH = 'data.tfrecords'
 
     # Data info
-    COLOR_SPACE = 'GRAY'
-    CHANNELS = 1
-    FORMAT = 'PNG'
     IMAGE_HEIGHT = 160
     IMAGE_WIDTH = 60
+
+    # Labels
+    CHARMAP = list('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ')
 
     # Optimization
     NUM_EPOCH = 1000

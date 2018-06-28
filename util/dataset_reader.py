@@ -5,10 +5,12 @@
     https://www.tensorflow.org/programmers_guide/datasets
 """
 
+import logging
 import numpy as np
 import tensorflow as tf
 
 from ..util import process_raw_data
+from ..defaults import Config
 
 
 class DataRead(object):
@@ -54,10 +56,12 @@ class DataRead(object):
                                            'image': tf.FixedLenFeature([], tf.string),
                                            'label': tf.FixedLenFeature([], tf.string),
                                            'height' : tf.FixedLenFeature([], tf.int64),
-                                           'width' : tf.FixedLenFeature([], tf.int64)
+                                           'width' : tf.FixedLenFeature([], tf.int64),
+                                           'channel' : tf.FixedLenFeature([], tf.int64),
+                                           'format': tf.FixedLenFeature([], tf.string),
                                            })
 
-        return features['image'], features['label'], features['height'], features['width']
+        return features['image'], features['label'], features['height'], features['width'], features['channel'], features['format']
 
 
     def gen(self, batch_size):
@@ -72,19 +76,24 @@ class DataRead(object):
 
         # Creates an Iterator for enumerating the elements of this dataset.
         iterator = dataset.make_one_shot_iterator()
-        images, labels, heights, widths = iterator.get_next()
+        images, labels, heights, widths, channels, formats = iterator.get_next()
         with tf.Session(config=tf.ConfigProto(allow_soft_placement=True)) as sess:
             while True:
                 try:
                     # Advance the iterator and get the next elements
-                    raw_image, raw_label, raw_height, raw_width = sess.run([images, labels, heights, widths])
-                    for img, label, h, w in zip(raw_image, raw_label, raw_height, raw_width):
+                    raw_image, raw_label, raw_height, raw_width, raw_channel, raw_format = sess.run([images, labels, heights, widths, channels, formats])
+                    for img, label, h, w, chan, form in zip(raw_image, raw_label, raw_height, raw_width, raw_channel, raw_format):
                         # Preprocess label
                         word = process_raw_data.process_label(label)
                         # Preprocess img data
-                        init_height = tf.cast(h, tf.int32)
-                        init_width = tf.cast(w, tf.int32)
-                        img = process_raw_data.process_png(img, init_height, init_width)
+                        form = form.decode('iso-8859-1')
+                        if(chan != 1):
+                            logging.error('Unsupported channels number !')
+                            break
+                        if(form != 'PNG'):
+                            logging.error('Unsupported image format !')
+                            break
+                        img = process_raw_data.process_png(img, h, w, chan, Config.IMAGE_HEIGHT, Config.IMAGE_WIDTH)
                         img = sess.run(img)
                         bucket_size = self.bucket_append(img, word)
                         if bucket_size >= batch_size:

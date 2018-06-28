@@ -71,17 +71,6 @@ def writeAnnotation(input_dir_path, output_file_path, log_step):
     logging.info('\033[0;32mLabeling file is ready: %s \033[0m \n ', output_file.name)
 
 
-def shuffle(file_path) :
-    """Randomly shuffle the lines of a txt file (keeps the association of an image with its label) """
-    data = []
-    with open(file_path,'r') as source:
-        data = [ (random.random(), line) for line in source ]
-        data.sort()
-    with open(file_path,'w+') as target:
-        for _, line in data:
-            target.write( line )
-
-
 def generateDataset(annotations_path, output_path, log_step):
     """Turn all the images and associated label from a txt file into a tfRecords file"""
     logging.info(' - Generate binary dataset - ')
@@ -89,7 +78,9 @@ def generateDataset(annotations_path, output_path, log_step):
 
     writer = tf.python_io.TFRecordWriter(output_path)
 
-    longest_label = ''
+    label_list = []
+    greater_height = 0
+    greater_width = 0
     nb_pair = 0
     with open(annotations_path,'r') as source:
         # iterate over each and construct the Example proto oject
@@ -101,15 +92,24 @@ def generateDataset(annotations_path, output_path, log_step):
                 logging.error('\033[0;31m missing filename or label at line %i: %s (ignored data)\033[0m', idx+1, line)
                 continue
 
-            img = np.array(Image.open(img_path))
+            img_pil = Image.open(img_path)
+            img = np.array(img_pil)
             height = img.shape[0]
             width = img.shape[1]
+            channel = 1 if len(img.shape) == 2  else img.shape[2]
+            img_format = img_pil.format
 
             with open(img_path, 'rb') as img_file:
                 img_raw = img_file.read()
 
-            if len(label) > len(longest_label):
-                longest_label = label
+            if label not in label_list:
+                label_list.append(label)
+
+            if height > greater_height:
+                greater_height = height
+
+            if width > greater_width:
+                greater_width = width
 
             # A Feature contains a map of string to Feature proto objects which are one of either a int64_list, float_list, or bytes_list
             feature = {}
@@ -117,9 +117,8 @@ def generateDataset(annotations_path, output_path, log_step):
             feature['label'] = _bytes_feature(b(label))
             feature['height'] = _int64_feature(height)
             feature['width'] = _int64_feature(width)
-            feature['colorspace'] = _bytes_feature(tf.compat.as_bytes(Config.COLOR_SPACE))
-            feature['channels'] = _int64_feature(Config.CHANNELS)
-            feature['format'] = _bytes_feature(tf.compat.as_bytes(Config.FORMAT))
+            feature['channel'] = _int64_feature(channel)
+            feature['format'] = _bytes_feature(tf.compat.as_bytes(img_format))
 
             # Example contains a Features proto object
             example = tf.train.Example(features=tf.train.Features(feature=feature))
@@ -132,7 +131,9 @@ def generateDataset(annotations_path, output_path, log_step):
                 logging.info('\033[0;37mProcessed %i pairs\033[0m', idx+1)
 
     logging.info('\033[0;32mProcessed %i pairs\033[0m', nb_pair+1)
-    logging.info('\033[0;32mLongest label (%i): %s\033[0m', len(longest_label), longest_label)
+    logging.info('\033[0;32mGreater height : %s\033[0m', greater_height)
+    logging.info('\033[0;32mGreater width : %s\033[0m', greater_width)
+    logging.info('\033[0;32mLabel list : [ %s ]\033[0m', ', '.join(str(l) for l in label_list))
     logging.info('\033[0;32mDataset is ready: %s \033[0m', output_path)
 
     writer.close()
