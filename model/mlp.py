@@ -38,10 +38,10 @@ class MultilayerPerceptron(object):
         # DEFINES THE MODEL --------------------------------------------------------------------------------
 
         # Network Parameters
-        self.n_hidden_1 = 4800 # 1st layer number of neurons
-        self.n_hidden_2 = 2400 # 2nd layer number of neurons
         self.n_input = Config.IMAGE_HEIGHT * Config.IMAGE_WIDTH # size of the data input (total pixels)
-        self.n_classes = 36 # total classes (0-9 digits + A-Z chars)
+        self.n_hidden_1 = (self.n_input//2) # 1st layer number of neurons
+        self.n_hidden_2 = (self.n_hidden_1//2) # 2nd layer number of neurons
+        self.n_classes = len(Config.CHARMAP) # total classes (0-9 digits)
 
         # Graph input
         self.X = tf.placeholder('float', [None, self.n_input], name='X')

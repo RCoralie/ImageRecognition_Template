@@ -11,11 +11,11 @@ class Config:
     DATASET_PATH = 'data.tfrecords'
 
     # Data info
-    IMAGE_HEIGHT = 160
-    IMAGE_WIDTH = 60
+    IMAGE_HEIGHT = 28
+    IMAGE_WIDTH = 28
 
     # Labels
-    CHARMAP = list('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ')
+    CHARMAP = list('0123456789')
 
     # Optimization
     NUM_EPOCH = 1000
