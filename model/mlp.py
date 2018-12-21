@@ -1,4 +1,5 @@
-
+#!/usr/bin/env python2 
+# -*- coding: utf-8 -*- 
 """
     A 2-Hidden Layers Fully Connected Neural Network (a.k.a Multilayer Perceptron)
 
@@ -14,7 +15,6 @@ import tensorflow as tf
 
 from datetime import datetime
 
-from ..defaults import Config
 from ..util.dataset_reader import DataRead
 
 tf.logging.set_verbosity(tf.logging.ERROR)
@@ -23,6 +23,7 @@ tf.logging.set_verbosity(tf.logging.ERROR)
 class MultilayerPerceptron(object):
 
     def __init__(self,
+                 config,
                  batch_size,
                  initial_learning_rate,
                  steps_per_checkpoint,
@@ -30,6 +31,7 @@ class MultilayerPerceptron(object):
                  model_dir):
 
         # Global Parameters
+        self.config = config
         self.learning_rate = initial_learning_rate
         self.batch_size = batch_size
         self.model_dir = model_dir
@@ -38,10 +40,10 @@ class MultilayerPerceptron(object):
         # DEFINES THE MODEL --------------------------------------------------------------------------------
 
         # Network Parameters
-        self.n_input = Config.IMAGE_HEIGHT * Config.IMAGE_WIDTH # size of the data input (total pixels)
+        self.n_input = self.config.IMAGE_HEIGHT * self.config.IMAGE_WIDTH # size of the data input (total pixels)
         self.n_hidden_1 = (self.n_input//2) # 1st layer number of neurons
         self.n_hidden_2 = (self.n_hidden_1//2) # 2nd layer number of neurons
-        self.n_classes = len(Config.CHARMAP) # total classes (0-9 digits)
+        self.n_classes = len(self.config.CHARMAP) # total classes (0-9 digits)
 
         # Graph input
         self.X = tf.placeholder('float', [None, self.n_input], name='X')
@@ -107,7 +109,7 @@ class MultilayerPerceptron(object):
         current_step = 0
 
         logging.info('Starting the training process.')
-        s_gen = DataRead(dataset_path, epochs=num_epoch)
+        s_gen = DataRead(self.config, dataset_path, epochs=num_epoch)
         with tf.Session() as sess:
             # Initialize or load model parameters & create summary-writer
             ckpt = tf.train.get_checkpoint_state(self.model_dir)
@@ -126,6 +128,8 @@ class MultilayerPerceptron(object):
                 batch_x = batch['data']
                 batch_y = batch['labels']
                 feed_dict = {self.X: batch_x, self.Y: batch_y}
+                logging.info('Shape of batch X : ' + str(tuple(batch_x.shape)))
+                logging.info('Shape of batch Y : ' + str(tuple(batch_y.shape)))
                 _, loss_value = sess.run([self.train_op, self.loss_op], feed_dict)
                 curr_step_time = (time.time() - start_time)
 

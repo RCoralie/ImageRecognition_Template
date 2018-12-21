@@ -1,0 +1,9 @@
+[label]
+list = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+[image]
+height = 28
+width = 28
+[optimization]
+num_epoch = 1000
+batch_size = 65
+initial_learning_rate = 0.1

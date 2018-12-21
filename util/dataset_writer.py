@@ -1,3 +1,5 @@
+#!/usr/bin/env python2 
+# -*- coding: utf-8 -*- 
 """
 Generate dataset in tfrecords format(turn all the images and associated label from a folder (use folder name as unique label) into a tfRecord file).
 TFRecords are TensorFlow’s default data format. A record is simply a binary file that contains serialized tf.train.Example Protobuf objects.
@@ -29,8 +31,6 @@ from PIL import Image
 from six import b
 import tensorflow as tf
 import numpy as np
-
-from ..defaults import Config
 
 
 def _bytes_feature(value):

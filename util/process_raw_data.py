@@ -1,32 +1,31 @@
+#!/usr/bin/env python2 
+# -*- coding: utf-8 -*- 
 """
     Builds data of the right shape for the input layer and the labels of the output layer shape
 """
-
+import logging
 import tensorflow as tf
 import numpy as np
 import sys
 
-from ..defaults import Config
-
-def process_label(lex):
+def process_label(lex, charmap):
     """
     convert_lex is needed to convert label to an array of int
     """
-    if sys.version_info >= (3,):
-        lex = lex.decode('iso-8859-1')
-        word = np.zeros((len(Config.CHARMAP),), dtype=float)
-        word[Config.CHARMAP.index(lex)] =1.
-        return word
+    lex = lex.decode('utf_8')
+    word = np.zeros((len(charmap),), dtype=float)
+    word[charmap.index(lex)] = 1.
+    return word
 
 
-def process_png(raw_image, init_height, init_width, channel, final_height, final_width):
+def process_image(raw_image, init_height, init_width, channel, final_height, final_width):
     """
     To be processed by a neural network, all images must be decoded and have the same shape
     """
-    # Decode raw image
-    img = tf.image.decode_png(raw_image, channels=channel)
+    # Decode raw image : /!\ 1: output a grayscale image !
+    img = tf.image.decode_image(raw_image, channels=1)
     # Resizes images
-    img = tf.reshape(img, [init_height, init_width, channel])
+    img = tf.reshape(img, [init_height, init_width, 1])
     img = tf.image.resize_image_with_crop_or_pad(image=img,
                                                 target_height=final_height,
                                                 target_width=final_width)

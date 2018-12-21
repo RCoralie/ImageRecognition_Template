@@ -6,6 +6,7 @@ import tensorflow as tf
 from .defaults import Config
 from .util import dataset_writer
 from .model.mlp import MultilayerPerceptron
+from .model.config import ModelConfig
 
 tf.logging.set_verbosity(tf.logging.ERROR)
 
@@ -18,7 +19,7 @@ def process_args(args, defaults):
 
     # Global arguments
     parser.add_argument('--log-path', dest='log_path',
-                        type=str, default=defaults.LOG_PATH,
+                        type=str, default=Config.LOG_PATH,
                         help=('Log file path, default=%s' % (defaults.LOG_PATH)))
     parser.set_defaults(load_model=defaults.LOAD_MODEL)
     parser.set_defaults(model_dir=defaults.MODEL_DIR)
@@ -52,6 +53,9 @@ def process_args(args, defaults):
     # Train model
     parser_train = subparsers.add_parser('train', help='Train model.')
     parser_train.set_defaults(phase='train')
+    parser_train.add_argument('config', metavar='config',
+                              type=str,
+                              help=('Path to the config file'))
     parser_train.add_argument('dataset_path', metavar='dataset_path',
                                 type=str,
                                 help=('Path to the dataset (tfrecords) file'))
@@ -60,15 +64,6 @@ def process_args(args, defaults):
     parser_train.add_argument('--max-checkpoints', dest='max_checkpoints',
                               type=int, default=defaults.MAX_CHECKPOINTS,
                               help=('Number max of checkpoints saved, default=%s' % (defaults.MAX_CHECKPOINTS)))
-    parser_train.add_argument('--num-epoch', dest='num_epoch',
-                              type=int, default=defaults.NUM_EPOCH,
-                              help=('Number of epochs, default = %s' % (defaults.NUM_EPOCH)))
-    parser_train.add_argument('--batch-size', dest='batch_size',
-                              type=int, default=defaults.BATCH_SIZE,
-                              help=('Batch size, default = %s' % (defaults.BATCH_SIZE)))
-    parser_train.add_argument('--initial-learning-rate', dest='initial_learning_rate',
-                      type=float, default=defaults.INITIAL_LEARNING_RATE,
-                      help=('Initial learning rate, default = %s' % (defaults.INITIAL_LEARNING_RATE)))
     parser_train.add_argument('--steps-per-checkpoint', dest='steps_per_checkpoint',
                             type=int, default=defaults.STEPS_PER_CHECKPOINT,
                             help=('Checkpointing (print perplexity, save model), default = %s' % (defaults.STEPS_PER_CHECKPOINT)))
@@ -110,8 +105,9 @@ def main(args=None):
             dataset_writer.generateDataset(parameters.annotations_path, parameters.output_path, parameters.log_step)
             return
         elif parameters.phase == 'train':
-            model = MultilayerPerceptron(batch_size = parameters.batch_size, initial_learning_rate=parameters.initial_learning_rate, steps_per_checkpoint = parameters.steps_per_checkpoint, max_checkpoints = parameters.max_checkpoints, model_dir=parameters.model_dir)
-            model.train(parameters.dataset_path, parameters.num_epoch, parameters.load_model, parameters.log_step)
+            modelConfig = ModelConfig(file = parameters.config)
+            model = MultilayerPerceptron(config = modelConfig, batch_size = modelConfig.BATCH_SIZE, initial_learning_rate = modelConfig.INITIAL_LEARNING_RATE, steps_per_checkpoint = parameters.steps_per_checkpoint, max_checkpoints = parameters.max_checkpoints, model_dir=parameters.model_dir)
+            model.train(parameters.dataset_path, modelConfig.NUM_EPOCH, parameters.load_model, parameters.log_step)
             return
         else:
             raise NotImplementedError

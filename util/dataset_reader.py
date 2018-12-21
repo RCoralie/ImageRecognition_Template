@@ -1,3 +1,5 @@
+#!/usr/bin/env python2 
+# -*- coding: utf-8 -*- 
 """
     The recommended way of reading the data in TensorFlow however is through the dataset API. Indeed, if you need to read your data from file, it may be more efficient to write it in TFrecord format and use TFRecordDataset to read it. Dataset API allows you to make efficient data processing pipelines easily.
 
@@ -10,18 +12,20 @@ import numpy as np
 import tensorflow as tf
 
 from ..util import process_raw_data
-from ..defaults import Config
 
 
 class DataRead(object):
 
 
     def __init__(self,
+                 config,
                  dataset_path,
                  epochs=1000):
         """
         Create the dataset that will be used to build the input data of the learning algorithm
         """
+
+        self.config = config
 
         # Prepare batch structure
         self.epochs = epochs
@@ -36,7 +40,7 @@ class DataRead(object):
         # -3- Create a dataset that repeats its input for many epochs
         self.dataset = self.dataset.repeat(self.epochs)
         # -4- Randomly shuffles the elements of this dataset to get batches with different sample distributions
-        self.dataset = self.dataset.shuffle(buffer_size=10000)
+        self.dataset = self.dataset.shuffle(buffer_size=100)
         # -5- Then create batches of samples by calling gen(self, batch_size) ...
 
 
@@ -84,16 +88,13 @@ class DataRead(object):
                     raw_image, raw_label, raw_height, raw_width, raw_channel, raw_format = sess.run([images, labels, heights, widths, channels, formats])
                     for img, label, h, w, chan, form in zip(raw_image, raw_label, raw_height, raw_width, raw_channel, raw_format):
                         # Preprocess label
-                        word = process_raw_data.process_label(label)
+                        word = process_raw_data.process_label(label, self.config.CHARMAP)
                         # Preprocess img data
                         form = form.decode('iso-8859-1')
-                        if(chan != 1):
-                            logging.error('Unsupported channels number !')
-                            break
-                        if(form != 'PNG'):
+                        if(form != 'PNG' and form != 'JPEG' and form != 'BMP'):
                             logging.error('Unsupported image format !')
                             break
-                        img = process_raw_data.process_png(img, h, w, chan, Config.IMAGE_HEIGHT, Config.IMAGE_WIDTH)
+                        img = process_raw_data.process_image(img, h, w, chan, self.config.IMAGE_HEIGHT, self.config.IMAGE_WIDTH)
                         img = sess.run(img)
                         bucket_size = self.bucket_append(img, word)
                         if bucket_size >= batch_size:

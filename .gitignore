@@ -1,3 +1,5 @@
+*.DS_STORE
+*.pyc
+*.log
+resources/*
 __pycache__/
-util/__pycache__/
-data/
