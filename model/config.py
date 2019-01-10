@@ -4,6 +4,7 @@
 Default parameters
 """
 import ConfigParser
+import logging
 
 class ModelConfig(object):
 
@@ -14,7 +15,8 @@ class ModelConfig(object):
         config.readfp(open(file))
 
         # Labels
-        self.CHARMAP = config.get('label', 'list')
+        self.CHARMAP = label_list = open(config.get('label', 'path')).read().splitlines()
+        logging.info('\033[0;32mLabel list : [ %s ]\033[0m', ', '.join(str(l) for l in self.CHARMAP))
 
         # Data info
         self.IMAGE_HEIGHT = int(config.get('image', 'height'))

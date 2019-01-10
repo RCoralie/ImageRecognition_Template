@@ -6,7 +6,7 @@
 import logging
 import tensorflow as tf
 import numpy as np
-import sys
+import sys, os
 
 def process_label(lex, charmap):
     """
@@ -14,7 +14,11 @@ def process_label(lex, charmap):
     """
     lex = lex.decode('utf_8')
     word = np.zeros((len(charmap),), dtype=float)
-    word[charmap.index(lex)] = 1.
+    try:
+        word[charmap.index(lex)] = 1.
+    except ValueError as e :
+        logging.info('\033[31mERROR - Check label file : %s \033[0m' % e)
+        os._exit(-1)
     return word
 
 

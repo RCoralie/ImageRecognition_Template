@@ -1,5 +1,5 @@
 [label]
-list = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+path = imageRecognition/resources/ocr/persists/labels.txt
 [image]
 height = 28
 width = 28
