@@ -34,8 +34,16 @@ def process_args(args, defaults):
                               type=str,
                               help=('Path to the output file'))
     parser_annote.add_argument('--log-step', dest='log_step',
-                                   type=int, default=defaults.LOG_STEP,
-                                   help=('Print log messages every N steps, default = %s' % defaults.LOG_STEP))
+                                type=int, default=defaults.LOG_STEP,
+                                help=('Print log messages every N steps, default = %s' % defaults.LOG_STEP))
+    parser_annote.add_argument('--rename', dest='rename', default=False,
+                              type=bool,
+                              help=('If the names of the images contain special characters, it is better to rename them by activating this boolean. Default = False'))
+    parser_annote.add_argument('--format', dest='format', default='png',
+                              type=str,
+                              help=('Format to use to rename images (if --rename True). Default = png'))
+   
+   
 
     # Dataset generation
     parser_dataset = subparsers.add_parser('dataset', help='Create a dataset in the TFRecords format.')
@@ -92,6 +100,8 @@ def main(args=None):
     logging.getLogger('').addHandler(console)
 
     if parameters.phase == 'annote':
+        if parameters.rename :
+            dataset_writer.renameFiles(parameters.input_dir_path, parameters.log_step, parameters.format)
         dataset_writer.writeAnnotation(parameters.input_dir_path, parameters.output_file_path, parameters.log_step)
         return
 

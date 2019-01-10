@@ -44,6 +44,22 @@ train_ocr:
 	$(eval WORKING_DIRECTORY = $(DOCKER_WD))
 	$(DOCKER) /imageRecognition/docker/ocr/train.sh
 
+download_myco:
+	$(eval WORKING_DIRECTORY = $(DOCKER_WD))
+	$(DOCKER) /imageRecognition/docker/mycologie/download.sh
+
+annote_myco:
+	$(eval WORKING_DIRECTORY = $(DOCKER_WD))
+	$(DOCKER) /imageRecognition/docker/mycologie/annote.sh
+
+dataset_myco:
+	$(eval WORKING_DIRECTORY = $(DOCKER_WD))
+	$(DOCKER) /imageRecognition/docker/mycologie/dataset.sh
+
+train_myco:
+	$(eval WORKING_DIRECTORY = $(DOCKER_WD))
+	$(DOCKER) /imageRecognition/docker/mycologie/train.sh
+
 test:
 	$(eval WORKING_DIRECTORY = $(DOCKER_WD))
 	$(DOCKER) /imageRecognition/docker/runtests.sh

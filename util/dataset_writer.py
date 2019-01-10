@@ -45,6 +45,25 @@ def _float_feature(value):
     """Wrapper for inserting float features into Example proto."""
     return tf.train.Feature(float_list=tf.train.FloatList(value=value))
 
+def renameFiles(input_dir_path, log_step, format):
+    """rename all images to avoid having special characters in the name of these images"""
+    logging.info(' - Rename images - ')
+    logging.info('Input directory: %s', input_dir_path)
+
+    idx = 0;
+    for root, dirs, files in os.walk(input_dir_path):
+        for d in dirs:
+            num = 0
+            for f in os.listdir(os.path.join(root,d)):
+                if not f.startswith('.'):
+                    os.rename(os.path.join(os.path.join(root,d),f), os.path.join(os.path.join(root,d),str(num) + "." + format))
+                    num = num + 1
+
+                    if idx % log_step == 0:
+                        logging.info('\033[0;37mRenamed %i pairs\033[0m', idx)
+                    idx = idx + 1
+
+    logging.info('\033[0;32mRenamed %i file \033[0m', idx)
 
 def writeAnnotation(input_dir_path, output_file_path, log_step):
     """Turn all the images and associated label from a folder (use folder name as unique label) into a txt file"""
@@ -92,43 +111,61 @@ def generateDataset(annotations_path, output_path, log_step):
                 logging.error('\033[0;31m missing filename or label at line %i: %s (ignored data)\033[0m', idx+1, line)
                 continue
 
-            img_pil = Image.open(img_path)
-            img = np.array(img_pil)
-            height = img.shape[0]
-            width = img.shape[1]
-            channel = 1 if len(img.shape) == 2  else img.shape[2]
-            img_format = img_pil.format
+            try :
+                img_pil = Image.open(img_path)
 
-            with open(img_path, 'rb') as img_file:
-                img_raw = img_file.read()
+            except KeyboardInterrupt :
+                # Separate except-clause that catches the KeyboardInterrupt (Control-C) exception, and raises it again
+                try:
+                    sys.exit(0)
+                except SystemExit :
+                    os._exit(0)
 
-            if label not in label_list:
-                label_list.append(label)
+            except IOError:
+                logging.info('Warning - Can\'t open as image file : %s', img_path)
 
-            if height > greater_height:
-                greater_height = height
+            else :
+                img = np.array(img_pil)
+                # Check corrupted image
+                if len(img.shape) >= 2 :
+                    height = img.shape[0]
+                    width = img.shape[1]
+                    channel = 1 if len(img.shape) == 2  else img.shape[2]
+                    img_format = img_pil.format
+                    with open(img_path, 'rb') as img_file:
+                        img_raw = img_file.read()
 
-            if width > greater_width:
-                greater_width = width
+                    if label not in label_list:
+                        label_list.append(label)
 
-            # A Feature contains a map of string to Feature proto objects which are one of either a int64_list, float_list, or bytes_list
-            feature = {}
-            feature['image'] = _bytes_feature(img_raw)
-            feature['label'] = _bytes_feature(b(label))
-            feature['height'] = _int64_feature(height)
-            feature['width'] = _int64_feature(width)
-            feature['channel'] = _int64_feature(channel)
-            feature['format'] = _bytes_feature(tf.compat.as_bytes(img_format))
+                    if height > greater_height:
+                        greater_height = height
 
-            # Example contains a Features proto object
-            example = tf.train.Example(features=tf.train.Features(feature=feature))
+                    if width > greater_width:
+                        greater_width = width
 
-            # use the proto object to serialize the example to a string and write the serialized object to disk
-            writer.write(example.SerializeToString())
+                    # A Feature contains a map of string to Feature proto objects which are one of either a int64_list, float_list, or bytes_list
+                    feature = {}
+                    feature['image'] = _bytes_feature(img_raw)
+                    feature['label'] = _bytes_feature(b(label))
+                    feature['height'] = _int64_feature(height)
+                    feature['width'] = _int64_feature(width)
+                    feature['channel'] = _int64_feature(channel)
+                    feature['format'] = _bytes_feature(tf.compat.as_bytes(img_format))
 
-            nb_pair += 1
-            if idx % log_step == 0:
-                logging.info('\033[0;37mProcessed %i pairs\033[0m', idx+1)
+                    # Example contains a Features proto object
+                    example = tf.train.Example(features=tf.train.Features(feature=feature))
+
+                    # use the proto object to serialize the example to a string and write the serialized object to disk
+                    writer.write(example.SerializeToString())
+
+                    nb_pair += 1
+                    if idx % log_step == 0:
+                        logging.info('\033[0;37mProcessed %i pairs\033[0m', idx+1)
+                else :
+                    logging.info('Warning - Corrupted image : %s', img_path)
+
+
 
     logging.info('\033[0;32mProcessed %i pairs\033[0m', nb_pair+1)
     logging.info('\033[0;32mGreater height : %s\033[0m', greater_height)

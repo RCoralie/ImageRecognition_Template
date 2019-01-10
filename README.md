@@ -33,6 +33,30 @@ make dataset_ocr
 make train_ocr
 ```
 
+### To train mushroom recognition
+
+Download the persistent data folder and place it in resources folder.
+
+https://drive.google.com/open?id=1LvhkII1W28LYAOY6Kf77bvyzBlBF8VD9
+
+All commands can be run through a Makefile. For this, launch the following commands from the docker folder : 
+
+```
+make annote_myco
+make dataset_myco
+make train_myco
+```
+
+It is possible to add and/or remove names of mushrooms to recognize, by modifying the file in resources/mycologie/persists/boletales.txt. Thenceforth training & testing folders should be remove and new dataset will have to be redownloaded before performing other commands.
+
+```
+make download_myco
+make annote_myco
+make dataset_myco
+make train_myco
+```
+
+
 ### To create your own image dataset & train the model
 
 1) Store images of the training dataset in a hierarchy of folders whose name is the label of the images they contain. For example :
@@ -60,6 +84,9 @@ make train_ocr
 		+ [...]
 
 A MNIST dataset (.png) is available for download : https://www.dropbox.com/s/m05yjxvoydbq1j2/mnist_png.tar.gz?dl=0
+
+Another way to easily create this hierarchy of folders is to use googleimagesdownload : https://github.com/hardikvasa/google-images-download
+You will find an example of use in docker/mycologie/download.sh.
 
 2) Generate labelling file : the generated file is a .txt that will associate each image with its label. As input, you must enter the path to the folder containing the hierarchy of data previously created. And as output the path to the txt file to create.
 
